@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "buildCommand": "cd packages/shared && npx tsc",
+  "crons": [
+    {
+      "path": "/api/cron/run-engine",
+      "schedule": "*/5 * * * *"
+    }
+  ]
+}
