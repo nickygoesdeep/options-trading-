@@ -1,9 +1,13 @@
-import type { AgentHealth } from '@quant-engine/shared';
+import type { AgentHealth, DecisionOutput } from '@quant-engine/shared';
 import { scanUniverse } from '../signals/universe.js';
 import { analyzeTechnicals } from '../signals/technicals.js';
 import { evaluateWithClaude } from '../decision/claude.js';
 import { checkRisk } from '../risk/guardrails.js';
-import { insertSignal, insertDecision, updateAgentHealth, sendSlackAlert, getOpenPositions } from '../db/supabase.js';
+import { placeOrder } from '../execution/broker.js';
+import {
+  insertSignal, insertDecision, updateAgentHealth, sendSlackAlert,
+  getOpenPositions, insertPendingTrade, updateTradeOnFill, markTradeFailed,
+} from '../db/supabase.js';
 
 const MARKET_OPEN_PST = '06:25';
 const MARKET_CLOSE_PST = '13:05';
@@ -88,6 +92,84 @@ function buildHealthAlert(service: string, status: string, message: string) {
   };
 }
 
+async function executeApprovedDecision(decision: DecisionOutput): Promise<void> {
+  // Step 1 — Determine option type
+  let optionType: 'CALL' | 'PUT';
+  if (decision.verdict === 'BUY_CALL') {
+    optionType = 'CALL';
+  } else if (decision.verdict === 'BUY_PUT') {
+    optionType = 'PUT';
+  } else {
+    console.log(`[execution] Non-actionable verdict ${decision.verdict}, skipping execution`);
+    return;
+  }
+
+  const ticker = decision.signal.ticker;
+  const strike = decision.suggestedStrike;
+  const expiry = decision.suggestedExpiry;
+
+  // Step 2 — Insert pending trade
+  let pendingTrade;
+  try {
+    pendingTrade = await insertPendingTrade({
+      ticker,
+      direction: optionType,
+      strike: strike ?? 0,
+      expiry: expiry ?? '',
+      entryPrice: 0,
+      quantity: 1,
+      status: 'pending',
+      confidence: decision.confidence,
+      openedAt: new Date(),
+      paperTrade: true,
+      optionType,
+      decisionId: null,
+      signalId: null,
+    });
+  } catch (err) {
+    console.error(`[execution] Failed to insert pending trade for ${ticker}:`, err);
+    return;
+  }
+
+  // Step 3 — Place order with Tradier
+  let orderResult;
+  try {
+    orderResult = await placeOrder(decision, optionType);
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    await markTradeFailed(pendingTrade.id, errorMsg).catch((e) =>
+      console.error('[execution] Failed to mark trade as failed:', e)
+    );
+    if (SLACK_WEBHOOK_URL_TRADES) {
+      await sendSlackAlert(SLACK_WEBHOOK_URL_TRADES, {
+        text: `Trade failed to execute: ${ticker} ${optionType} ${strike} exp ${expiry} -- ${errorMsg}`,
+      });
+    }
+    return;
+  }
+
+  // Step 4 — Confirm fill in Supabase
+  try {
+    await updateTradeOnFill(pendingTrade.id, orderResult.brokerOrderId, orderResult.fillPrice);
+  } catch (err) {
+    console.error(`[execution] CRITICAL: Order placed at Tradier (${orderResult.brokerOrderId}) but failed to record fill for trade ${pendingTrade.id}:`, err);
+  }
+
+  // Step 5 — Slack fill confirmation
+  if (SLACK_WEBHOOK_URL_TRADES) {
+    await sendSlackAlert(SLACK_WEBHOOK_URL_TRADES, {
+      text: [
+        `Trade executed: ${ticker} ${optionType} x1 contract`,
+        `Strike: ${strike}  Expiry: ${expiry}`,
+        `OCC: ${orderResult.occSymbol}`,
+        `Order ID: ${orderResult.brokerOrderId}`,
+        `Confidence: ${decision.confidence}%`,
+        `Mode: PAPER`,
+      ].join('\n'),
+    });
+  }
+}
+
 export async function runEngine(bypassMarketHours: boolean = false): Promise<void> {
   try {
     // 1. Check market hours
@@ -135,6 +217,7 @@ export async function runEngine(bypassMarketHours: boolean = false): Promise<voi
           if (SLACK_WEBHOOK_URL_TRADES) {
             await sendSlackAlert(SLACK_WEBHOOK_URL_TRADES, buildTradeAlert(decision));
           }
+          await executeApprovedDecision(decision);
         } else {
           console.log(`[engine] REJECTED: ${ticker} — ${riskResult.reason}`);
         }
