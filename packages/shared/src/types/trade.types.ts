@@ -1,7 +1,7 @@
 import type { SignalDirection } from './signal.types';
 
 /** Current status of a trade */
-export type TradeStatus = 'pending' | 'open' | 'closed' | 'cancelled' | 'error';
+export type TradeStatus = 'pending' | 'open' | 'closed' | 'cancelled' | 'error' | 'failed';
 
 /** Reason a trade was exited */
 export type ExitReason =

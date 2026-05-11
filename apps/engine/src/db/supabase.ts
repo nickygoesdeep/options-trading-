@@ -272,6 +272,27 @@ export async function closeTrade(
   return mapRowToTrade(data);
 }
 
+export async function markTradeFailed(tradeId: string, reason: string): Promise<Trade> {
+  console.error(`[db] Marking trade ${tradeId} as failed: ${reason}`);
+
+  const { data, error } = await getClient()
+    .from('trades')
+    .update({
+      status: 'failed',
+      exit_reason: 'manual',
+      closed_at: new Date().toISOString(),
+    })
+    .eq('id', tradeId)
+    .select('*')
+    .single();
+
+  if (error || !data) {
+    throw new Error(`[db] Failed to mark trade as failed (${tradeId}): ${error?.message ?? 'row not found'}`);
+  }
+
+  return mapRowToTrade(data);
+}
+
 export async function sendSlackAlert(
   webhookUrl: string,
   message: Record<string, unknown>
