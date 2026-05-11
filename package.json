@@ -16,5 +16,9 @@
   },
   "engines": {
     "node": ">=18"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.2",
+    "dotenv": "^17.4.2"
   }
 }

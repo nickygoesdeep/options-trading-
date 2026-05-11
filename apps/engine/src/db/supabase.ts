@@ -1,3 +1,23 @@
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const envPath = resolve(__dirname, '../../../.env');
+
+try {
+  const envFile = readFileSync(envPath, 'utf-8');
+  for (const line of envFile.split('\n')) {
+    const [key, ...vals] = line.trim().split('=');
+    if (key && !key.startsWith('#')) {
+      process.env[key.trim()] = vals.join('=').trim();
+    }
+  }
+} catch {
+  console.warn('[env] Could not load .env file');
+}
+
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { SignalOutput, DecisionOutput, Trade, AgentHealth } from '@quant-engine/shared';
 
@@ -123,26 +143,37 @@ export async function insertTrade(trade: Trade): Promise<void> {
 }
 
 export async function updateAgentHealth(health: AgentHealth): Promise<void> {
+  const client = getClient();
   try {
-    const { error } = await getClient()
+    const { data: existing } = await client
       .from('agent_health')
-      .upsert(
-        {
-          id: health.id,
-          service: health.service,
+      .select('id')
+      .eq('service', health.service)
+      .maybeSingle();
+
+    if (existing) {
+      await client
+        .from('agent_health')
+        .update({
           status: health.status,
           last_run: health.lastRun,
           latency_ms: health.latencyMs,
           error_count: health.errorCount,
           message: health.message ?? null,
-          created_at: health.createdAt,
-          updated_at: health.updatedAt,
-        },
-        { onConflict: 'id' }
-      );
-
-    if (error) {
-      console.error('[db] Failed to upsert agent health:', error.message);
+          updated_at: new Date().toISOString()
+        })
+        .eq('service', health.service);
+    } else {
+      await client
+        .from('agent_health')
+        .insert({
+          service: health.service,
+          status: health.status,
+          last_run: health.lastRun,
+          latency_ms: health.latencyMs,
+          error_count: health.errorCount,
+          message: health.message ?? null
+        });
     }
   } catch (err) {
     console.error('[db] updateAgentHealth error:', err);

@@ -1,5 +1,7 @@
-import yahooFinance from 'yahoo-finance2';
+import YahooFinance from 'yahoo-finance2';
 import type { SignalOutput } from '@quant-engine/shared';
+
+const yahooFinance = new YahooFinance();
 
 export interface TechnicalAnalyzer {
   analyze(ticker: string): Promise<SignalOutput | null>;
@@ -53,15 +55,15 @@ export async function analyzeTechnicals(
       return null;
     }
 
-    const closes = result.map((bar) => bar.close);
-    const volumes = result.map((bar) => bar.volume);
+    const closes = result.map((bar: any) => bar.close);
+    const volumes = result.map((bar: any) => bar.volume);
 
     const price = closes[closes.length - 1];
     const rsi = Math.round(calculateRSI(closes, 14) * 100) / 100;
 
     const latestVolume = volumes[volumes.length - 1];
     const avgVolume =
-      volumes.slice(-15, -1).reduce((sum, v) => sum + v, 0) /
+      volumes.slice(-15, -1).reduce((sum: number, v: number) => sum + v, 0) /
       Math.min(14, volumes.length - 1);
     const volumeRatio = avgVolume > 0
       ? Math.round((latestVolume / avgVolume) * 100) / 100
@@ -74,11 +76,11 @@ export async function analyzeTechnicals(
       if (options?.options?.[0]?.calls?.[0]?.impliedVolatility) {
         const calls = options.options[0].calls;
         const ivValues = calls
-          .map((c) => c.impliedVolatility)
+          .map((c: any) => c.impliedVolatility)
           .filter((v): v is number => v != null && v > 0);
         if (ivValues.length > 0) {
           iv = Math.round(
-            (ivValues.reduce((sum, v) => sum + v, 0) / ivValues.length) * 10000
+            (ivValues.reduce((sum: number, v: number) => sum + v, 0) / ivValues.length) * 10000
           ) / 10000;
         }
       }

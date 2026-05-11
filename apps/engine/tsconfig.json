@@ -1,8 +1,17 @@
 {
-  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "rootDir": "src",
-    "outDir": "dist"
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "esModuleInterop": true,
+    "strict": true,
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@quant-engine/shared": ["../../packages/shared/src/index.ts"]
+    },
+    "outDir": "dist",
+    "skipLibCheck": true
   },
   "include": ["src"]
 }

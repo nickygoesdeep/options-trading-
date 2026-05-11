@@ -88,10 +88,10 @@ function buildHealthAlert(service: string, status: string, message: string) {
   };
 }
 
-export async function runEngine(): Promise<void> {
+export async function runEngine(bypassMarketHours: boolean = false): Promise<void> {
   try {
     // 1. Check market hours
-    if (!isMarketOpen()) {
+    if (!bypassMarketHours && !isMarketOpen()) {
       console.log('[engine] Market closed');
       return;
     }
