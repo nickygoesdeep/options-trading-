@@ -1,0 +1,19 @@
+{
+  "name": "@quant-engine/engine",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@quant-engine/shared": "*",
+    "yahoo-finance2": "^2.11.0",
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@supabase/supabase-js": "^2.43.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}

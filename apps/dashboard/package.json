@@ -1,0 +1,16 @@
+{
+  "name": "@quant-engine/dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "echo 'TODO: configure dashboard build'",
+    "dev": "echo 'TODO: configure dashboard dev server'"
+  },
+  "dependencies": {
+    "@quant-engine/shared": "*",
+    "@supabase/supabase-js": "^2.43.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}

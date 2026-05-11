@@ -1,0 +1,20 @@
+{
+  "name": "quant-engine",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "build:shared": "npm run build -w packages/shared",
+    "build:engine": "npm run build -w apps/engine",
+    "build:dashboard": "npm run build -w apps/dashboard",
+    "dev:engine": "npm run dev -w apps/engine",
+    "dev:dashboard": "npm run dev -w apps/dashboard"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
