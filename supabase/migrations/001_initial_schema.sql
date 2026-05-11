@@ -21,10 +21,11 @@ CREATE TABLE IF NOT EXISTS trades (
 CREATE TABLE IF NOT EXISTS signals (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   ticker TEXT NOT NULL,
-  direction TEXT NOT NULL CHECK (direction IN ('CALL', 'PUT')),
-  confidence NUMERIC NOT NULL,
-  indicators JSONB NOT NULL DEFAULT '[]',
-  smart_money JSONB,
+  price NUMERIC NOT NULL,
+  rsi NUMERIC NOT NULL,
+  volume BIGINT NOT NULL,
+  volume_ratio NUMERIC NOT NULL,
+  iv NUMERIC,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -32,7 +33,7 @@ CREATE TABLE IF NOT EXISTS decisions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   signal_id UUID REFERENCES signals(id),
   trade_id UUID REFERENCES trades(id),
-  verdict TEXT NOT NULL CHECK (verdict IN ('ENTER', 'SKIP', 'WAIT')),
+  verdict TEXT NOT NULL CHECK (verdict IN ('BUY_CALL', 'BUY_PUT', 'HOLD', 'SKIP')),
   confidence NUMERIC NOT NULL,
   reasoning JSONB NOT NULL,
   suggested_strike NUMERIC,

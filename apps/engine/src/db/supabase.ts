@@ -22,10 +22,11 @@ export async function insertSignal(signal: SignalOutput): Promise<void> {
       .from('signals')
       .insert({
         ticker: signal.ticker,
-        direction: signal.direction,
-        confidence: signal.confidence,
-        indicators: signal.indicators,
-        smart_money: signal.smartMoney,
+        price: signal.price,
+        rsi: signal.rsi,
+        volume: signal.volume,
+        volume_ratio: signal.volumeRatio,
+        iv: signal.iv,
         created_at: signal.timestamp.toISOString(),
       });
 
@@ -34,6 +35,41 @@ export async function insertSignal(signal: SignalOutput): Promise<void> {
     }
   } catch (err) {
     console.error('[db] insertSignal error:', err);
+  }
+}
+
+export async function getOpenPositions(): Promise<Trade[]> {
+  try {
+    const { data, error } = await getClient()
+      .from('trades')
+      .select('*')
+      .in('status', ['pending', 'filled']);
+
+    if (error) {
+      console.error('[db] Failed to get open positions:', error.message);
+      return [];
+    }
+
+    if (!data) return [];
+
+    return data.map((row) => ({
+      id: row.id,
+      ticker: row.ticker,
+      direction: row.direction,
+      strike: Number(row.strike),
+      expiry: row.expiry,
+      entryPrice: Number(row.entry_price),
+      exitPrice: row.exit_price != null ? Number(row.exit_price) : null,
+      quantity: row.quantity,
+      status: row.status,
+      pnl: row.pnl != null ? Number(row.pnl) : null,
+      confidence: Number(row.confidence),
+      openedAt: new Date(row.opened_at),
+      closedAt: row.closed_at ? new Date(row.closed_at) : null,
+    }));
+  } catch (err) {
+    console.error('[db] getOpenPositions error:', err);
+    return [];
   }
 }
 
@@ -110,5 +146,26 @@ export async function updateAgentHealth(health: AgentHealth): Promise<void> {
     }
   } catch (err) {
     console.error('[db] updateAgentHealth error:', err);
+  }
+}
+
+export async function sendSlackAlert(
+  webhookUrl: string,
+  message: Record<string, unknown>
+): Promise<void> {
+  try {
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(message),
+    });
+
+    if (response.ok) {
+      console.log('[slack] Alert sent successfully');
+    } else {
+      console.error('[slack] Failed to send alert:', response.status, response.statusText);
+    }
+  } catch (err) {
+    console.error('[slack] sendSlackAlert error:', err);
   }
 }
