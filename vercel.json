@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "$comment": "quant-engine cron deployment",
   "buildCommand": "cd packages/shared && npx tsc",
   "crons": [
     {
