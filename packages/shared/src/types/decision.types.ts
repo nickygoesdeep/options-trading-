@@ -1,7 +1,7 @@
 import type { SignalOutput } from './signal.types';
 
 /** Claude's decision on whether to trade */
-export type DecisionVerdict = 'ENTER' | 'SKIP' | 'WAIT';
+export type DecisionVerdict = 'BUY_CALL' | 'BUY_PUT' | 'HOLD' | 'SKIP';
 
 /** Reasoning structure from Claude decision layer */
 export interface DecisionReasoning {
