@@ -31,9 +31,8 @@ export interface RiskLimits {
 /** Result of a risk check */
 export interface RiskCheckResult {
   approved: boolean;
-  reason: string;
-  currentDailyLoss: number;
-  openPositionCount: number;
+  reason?: string;
+  maxRiskAllowed?: number;
 }
 
 /** Order to send to broker */
