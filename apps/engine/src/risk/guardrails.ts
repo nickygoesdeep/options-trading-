@@ -3,7 +3,7 @@ import type { DecisionOutput, Trade, RiskCheckResult } from '@quant-engine/share
 const MAX_RISK_PER_TRADE = 20;
 const MAX_DAILY_LOSS = 40;
 const MAX_OPEN_POSITIONS = 2;
-const MIN_CONFIDENCE = 85;
+const MIN_CONFIDENCE = 75;
 
 export function checkRisk(
   decision: DecisionOutput,
