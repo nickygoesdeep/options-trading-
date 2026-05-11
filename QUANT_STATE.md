@@ -8,75 +8,60 @@
 
 ## Current Phase
 
-**Phase 7 -- Broker Paper Trading (PENDING)**
-
----
+Phase 7 -- Broker Paper Trading (IN PROGRESS -- awaiting Tradier account approval)
 
 ## What Is Working
-
-- All Phase 1-6 complete
-- Vercel deployment READY (dpl_5JZn4giZ1nAWB3DmTmoGp6qWx8Uc)
-- Cron fires every 5 minutes automatically
+- Phase 1-6 complete
+- Vercel deployment LIVE (cron fires every 5 min, 06:25-13:05 PST)
 - Signal engine pulling real market data
-- Claude evaluating signals
-- Supabase storing all data
-- Slack alerts firing on approved signals
-- Confidence threshold at 75% for testing
+- Claude evaluating signals (BUY_CALL / BUY_PUT / SKIP)
+- Supabase storing signals, decisions, agent health
+- Slack alerts firing on approved signals (#trade-alerts, #agent-health)
+- Confidence threshold at 85% for paper trading gate
+- trades table migration applied -- 6 new columns added:
+    broker_order_id, decision_id, signal_id, option_type,
+    paper_trade (default true), exit_reason
+- trade.types.ts updated -- TradeInsert type, ExitReason type,
+    TradeStatus includes 'failed'
+- supabase.ts updated -- insertPendingTrade, updateTradeOnFill,
+    closeTrade, markTradeFailed, mapRowToTrade helper
+- broker.ts built -- placeOrder, buildOccSymbol (OCC symbol generator)
+- cron.ts updated -- executeApprovedDecision wired into orchestrator
 
----
+## Pending -- Awaiting Tradier
+- Tradier Individual brokerage account under review (Level 2 options, no futures)
+- Once approved: add TRADIER_TOKEN and TRADIER_ACCOUNT_ID to .env
+- Add same two vars to Vercel environment variables
+- Run local test-run.ts to confirm first paper trade fires end to end
+- Verify trade row appears in Supabase with broker_order_id populated
+- Verify Slack fill confirmation fires to #trade-alerts
 
-## Current Known Issues
+## Known Issues
+- decisions.reasoning JSON structure has a bug -- bearishFactors and
+  bullishFactors arrays duplicate the summary text instead of containing
+  distinct factors. Prompt engineering fix needed. Flagged for future session.
+- fillPrice returns 0 from placeOrder -- market orders on Tradier sandbox
+  do not return fill price immediately. Fetching actual fill price is
+  Phase 7 follow-up work after first successful paper trade confirmed.
 
-- `[env] Could not load .env file` warning on every run (harmless -- --env-file flag handles loading)
-- smartMoney.ts is still a placeholder (Phase 2 incomplete)
-- signal_id not linking correctly in decisions table (null foreign key)
-- Low volume ratios during early market hours (0.10-0.21) causing conservative signals
-- broker.ts is placeholder only -- no trades execute yet
+## Next Session Starting Point
+When Tradier approves:
+  1. Add TRADIER_TOKEN + TRADIER_ACCOUNT_ID to .env and Vercel env vars
+  2. Run local test to confirm end-to-end paper trade fires
+  3. Confirm Supabase trade row has broker_order_id populated
+  4. Confirm Slack fill alert fires
+  5. If all pass -- Phase 7 complete, move to Phase 8 (Dashboard)
 
----
+## Invariants Added This Session
+None -- all existing invariants held
 
-## Last Session Decisions
-
-- Monorepo structure chosen over standalone repos
-- TypeScript strict mode with ESM modules (NodeNext)
-- yahoo-finance2 used via ESM import (not CommonJS)
-- Confidence threshold set to 75% temporarily for testing
-- Volume ratio causing conservative Claude behavior during low-volume periods
-- Supabase schema fixed directly via MCP connector
-- Run command established: `node --env-file=C:\Users\Nicholas\options-trading-\.env --import tsx/esm src/test-run.ts`
-- Vercel deployment configured with cron every 5 minutes
-
----
-
-## Next Pending Action
-
-**Phase 7 -- Select and integrate paper trading broker**
-Options: Tradier (recommended), Tastytrade, IBKR
-
----
-
-## Milestone Tracker
-
-```
-Paper trading signal track record:   0 / 10 consecutive wins needed
-Confidence threshold:                75% (testing) -- revert to 85%
-Capital deployed:                    $0 (paper only)
-Real money unlock:                   After 10 consecutive winning signals
-```
-
----
-
-## GitHub
-
-- Repo: nickygoesdeep/options-trading-
-- Branch: main
-- Last commit: fix: set Vercel outputDirectory for API-only project
-
----
-
-## Infrastructure
-
-- Supabase: uqcinawuxtnniouckurh
-- Vercel: deployed (dpl_5JZn4giZ1nAWB3DmTmoGp6qWx8Uc)
-- Slack: quant-engine workspace (#trade-alerts, #agent-health)
-- Local run path: C:\Users\Nicholas\options-trading-
+## Build Phase Tracker
+Phase 1  Monorepo scaffold + shared types        COMPLETE
+Phase 2  Data layer (yahoo-finance2 + Supabase)  COMPLETE
+Phase 3  Claude decision layer                   COMPLETE
+Phase 4  Risk guardrails                         COMPLETE
+Phase 5  Orchestrator + Slack alerts             COMPLETE
+Phase 6  Vercel cron deployment                  COMPLETE
+Phase 7  Broker paper trading execution          IN PROGRESS
+Phase 8  Dashboard (agent health + P&L)          PENDING
+Phase 9  Live trading + monitoring               PENDING
