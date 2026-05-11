@@ -1,7 +1,6 @@
 {
-  "$comment": "quant-engine cron deployment",
-  "version": 2,
-  "buildCommand": "cd packages/shared && npx tsc && cd ../../apps/engine && npx tsc",
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run build",
   "crons": [
     {
       "path": "/api/cron/run-engine",

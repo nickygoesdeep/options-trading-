@@ -1,23 +1,14 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { runEngine } from '../../apps/engine/src/scheduler/cron.js';
 
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse
-) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  const authHeader = req.headers.authorization;
+export async function GET(request: Request) {
+  const authHeader = request.headers.get('authorization');
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return res.status(401).json({ error: 'Unauthorized' });
+    return new Response('Unauthorized', { status: 401 });
   }
-
   try {
     await runEngine();
-    return res.status(200).json({ success: true });
+    return new Response(JSON.stringify({ success: true }), { status: 200 });
   } catch (err) {
-    return res.status(500).json({ error: 'Engine failed' });
+    return new Response(JSON.stringify({ error: 'Engine failed' }), { status: 500 });
   }
 }
