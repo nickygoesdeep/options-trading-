@@ -19,7 +19,7 @@ try {
 }
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import type { SignalOutput, DecisionOutput, Trade, AgentHealth } from '@quant-engine/shared';
+import type { SignalOutput, DecisionOutput, Trade, TradeInsert, AgentHealth } from '@quant-engine/shared';
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -72,21 +72,7 @@ export async function getOpenPositions(): Promise<Trade[]> {
 
     if (!data) return [];
 
-    return data.map((row) => ({
-      id: row.id,
-      ticker: row.ticker,
-      direction: row.direction,
-      strike: Number(row.strike),
-      expiry: row.expiry,
-      entryPrice: Number(row.entry_price),
-      exitPrice: row.exit_price != null ? Number(row.exit_price) : null,
-      quantity: row.quantity,
-      status: row.status,
-      pnl: row.pnl != null ? Number(row.pnl) : null,
-      confidence: Number(row.confidence),
-      openedAt: new Date(row.opened_at),
-      closedAt: row.closed_at ? new Date(row.closed_at) : null,
-    }));
+    return data.map(mapRowToTrade);
   } catch (err) {
     console.error('[db] getOpenPositions error:', err);
     return [];
@@ -178,6 +164,112 @@ export async function updateAgentHealth(health: AgentHealth): Promise<void> {
   } catch (err) {
     console.error('[db] updateAgentHealth error:', err);
   }
+}
+
+function mapRowToTrade(row: Record<string, unknown>): Trade {
+  return {
+    id: row.id as string,
+    ticker: row.ticker as string,
+    direction: row.direction as Trade['direction'],
+    strike: Number(row.strike),
+    expiry: row.expiry as string,
+    entryPrice: Number(row.entry_price),
+    exitPrice: row.exit_price != null ? Number(row.exit_price) : null,
+    quantity: row.quantity as number,
+    status: row.status as Trade['status'],
+    pnl: row.pnl != null ? Number(row.pnl) : null,
+    confidence: Number(row.confidence),
+    openedAt: new Date(row.opened_at as string),
+    closedAt: row.closed_at ? new Date(row.closed_at as string) : null,
+    brokerOrderId: (row.broker_order_id as string) ?? null,
+    decisionId: (row.decision_id as string) ?? null,
+    signalId: (row.signal_id as string) ?? null,
+    optionType: (row.option_type as Trade['optionType']) ?? null,
+    paperTrade: row.paper_trade as boolean,
+    exitReason: (row.exit_reason as Trade['exitReason']) ?? null,
+  };
+}
+
+export async function insertPendingTrade(trade: TradeInsert): Promise<Trade> {
+  const { data, error } = await getClient()
+    .from('trades')
+    .insert({
+      ticker: trade.ticker,
+      direction: trade.direction,
+      strike: trade.strike,
+      expiry: trade.expiry,
+      entry_price: trade.entryPrice,
+      exit_price: trade.exitPrice ?? null,
+      quantity: trade.quantity,
+      status: 'pending',
+      pnl: trade.pnl ?? null,
+      confidence: trade.confidence,
+      opened_at: trade.openedAt.toISOString(),
+      closed_at: trade.closedAt?.toISOString() ?? null,
+      broker_order_id: trade.brokerOrderId ?? null,
+      decision_id: trade.decisionId ?? null,
+      signal_id: trade.signalId ?? null,
+      option_type: trade.optionType ?? null,
+      paper_trade: true,
+      exit_reason: trade.exitReason ?? null,
+    })
+    .select('*')
+    .single();
+
+  if (error || !data) {
+    throw new Error(`[db] Failed to insert pending trade: ${error?.message ?? 'no data returned'}`);
+  }
+
+  return mapRowToTrade(data);
+}
+
+export async function updateTradeOnFill(
+  tradeId: string,
+  brokerOrderId: string,
+  entryPrice: number
+): Promise<Trade> {
+  const { data, error } = await getClient()
+    .from('trades')
+    .update({
+      broker_order_id: brokerOrderId,
+      entry_price: entryPrice,
+      status: 'open',
+    })
+    .eq('id', tradeId)
+    .select('*')
+    .single();
+
+  if (error || !data) {
+    throw new Error(`[db] Failed to update trade on fill (${tradeId}): ${error?.message ?? 'row not found'}`);
+  }
+
+  return mapRowToTrade(data);
+}
+
+export async function closeTrade(
+  tradeId: string,
+  exitPrice: number,
+  pnl: number,
+  exitReason: 'stop_loss' | 'expired' | 'confidence_drop' | 'take_profit' | 'manual'
+): Promise<Trade> {
+  const { data, error } = await getClient()
+    .from('trades')
+    .update({
+      exit_price: exitPrice,
+      pnl,
+      exit_reason: exitReason,
+      status: 'closed',
+      closed_at: new Date().toISOString(),
+    })
+    .eq('id', tradeId)
+    .select('*')
+    .single();
+
+  if (error || !data) {
+    throw new Error(`[db] Failed to close trade (${tradeId}): ${error?.message ?? 'row not found'}`);
+  }
+
+  return mapRowToTrade(data);
 }
 
 export async function sendSlackAlert(
