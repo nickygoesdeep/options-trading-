@@ -1,7 +1,7 @@
 {
-  "version": 2,
   "$comment": "quant-engine cron deployment",
-  "buildCommand": "cd packages/shared && npx tsc",
+  "version": 2,
+  "buildCommand": "cd packages/shared && npx tsc && cd ../../apps/engine && npx tsc",
   "crons": [
     {
       "path": "/api/cron/run-engine",

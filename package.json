@@ -7,7 +7,7 @@
     "apps/*"
   ],
   "scripts": {
-    "build": "npm run build --workspaces",
+    "build": "npm run build --workspaces --if-present",
     "build:shared": "npm run build -w packages/shared",
     "build:engine": "npm run build -w apps/engine",
     "build:dashboard": "npm run build -w apps/dashboard",

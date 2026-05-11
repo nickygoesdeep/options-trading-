@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { runEngine } from '../../src/scheduler/cron.js';
+import { runEngine } from '../../apps/engine/src/scheduler/cron.js';
 
 export default async function handler(
   req: VercelRequest,
