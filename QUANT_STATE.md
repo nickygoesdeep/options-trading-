@@ -8,20 +8,20 @@
 
 ## Current Phase
 
-**Phase 6 -- Vercel Cron Deployment (PENDING)**
+**Phase 7 -- Broker Paper Trading (PENDING)**
 
 ---
 
 ## What Is Working
 
-- Signal engine pulls real market data via yahoo-finance2
-- RSI, IV, and volume ratio calculated correctly
-- Claude evaluates signals and returns structured decisions
-- Risk guardrails enforce capital protection rules
-- Supabase stores signals, decisions, and agent health
-- Slack alerts fire to #trade-alerts on approved signals
-- Engine runs clean locally via test-run.ts
-- Confidence threshold set to 75% for testing (revert to 85% after proof)
+- All Phase 1-6 complete
+- Vercel deployment READY (dpl_5JZn4giZ1nAWB3DmTmoGp6qWx8Uc)
+- Cron fires every 5 minutes automatically
+- Signal engine pulling real market data
+- Claude evaluating signals
+- Supabase storing all data
+- Slack alerts firing on approved signals
+- Confidence threshold at 75% for testing
 
 ---
 
@@ -44,17 +44,14 @@
 - Volume ratio causing conservative Claude behavior during low-volume periods
 - Supabase schema fixed directly via MCP connector
 - Run command established: `node --env-file=C:\Users\Nicholas\options-trading-\.env --import tsx/esm src/test-run.ts`
+- Vercel deployment configured with cron every 5 minutes
 
 ---
 
 ## Next Pending Action
 
-**Phase 6 -- Vercel Deployment**
-1. Create Vercel project from GitHub repo
-2. Add all environment variables to Vercel
-3. Create Vercel cron job (every 5 min, market hours)
-4. Deploy and verify cron fires correctly
-5. Confirm signals appear in Supabase on schedule
+**Phase 7 -- Select and integrate paper trading broker**
+Options: Tradier (recommended), Tastytrade, IBKR
 
 ---
 
@@ -73,13 +70,13 @@ Real money unlock:                   After 10 consecutive winning signals
 
 - Repo: nickygoesdeep/options-trading-
 - Branch: main
-- Last commit: feat: engine running clean -- signals flowing, Claude evaluating, Slack alerts firing
+- Last commit: fix: set Vercel outputDirectory for API-only project
 
 ---
 
 ## Infrastructure
 
 - Supabase: uqcinawuxtnniouckurh
-- Vercel: not yet connected
+- Vercel: deployed (dpl_5JZn4giZ1nAWB3DmTmoGp6qWx8Uc)
 - Slack: quant-engine workspace (#trade-alerts, #agent-health)
 - Local run path: C:\Users\Nicholas\options-trading-
