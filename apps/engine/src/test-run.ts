@@ -20,7 +20,7 @@ try {
   console.warn('[env] Could not load .env file');
 }
 
-import { runEngine } from './scheduler/cron';
+import { runEngine } from './scheduler/cron.js';
 
 async function main() {
   console.log(`[test-run] START: ${new Date().toISOString()}`);

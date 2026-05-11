@@ -1,9 +1,9 @@
 import type { AgentHealth } from '@quant-engine/shared';
-import { scanUniverse } from '../signals/universe';
-import { analyzeTechnicals } from '../signals/technicals';
-import { evaluateWithClaude } from '../decision/claude';
-import { checkRisk } from '../risk/guardrails';
-import { insertSignal, insertDecision, updateAgentHealth, sendSlackAlert, getOpenPositions } from '../db/supabase';
+import { scanUniverse } from '../signals/universe.js';
+import { analyzeTechnicals } from '../signals/technicals.js';
+import { evaluateWithClaude } from '../decision/claude.js';
+import { checkRisk } from '../risk/guardrails.js';
+import { insertSignal, insertDecision, updateAgentHealth, sendSlackAlert, getOpenPositions } from '../db/supabase.js';
 
 const MARKET_OPEN_PST = '06:25';
 const MARKET_CLOSE_PST = '13:05';
